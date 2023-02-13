@@ -5,7 +5,7 @@ use std::thread;
 use std::time::Duration;
 
 struct ThreadSafeCacheImpl<K, V> {
-    cache: HashMap<K, V>,
+    cache: HashMap<K, (V, i32)>,
     expiration_set: BTreeMap<i32,Vec<K>>,
     max_size: i32,
     current_size: i32,
@@ -47,7 +47,7 @@ impl<K: std::marker::Send  + 'static + Clone +  Eq + Hash, V: std::marker::Send 
         if !md.cache.contains_key(&key) {
             md.current_size = md.current_size + 1;
         }
-        md.cache.insert(key, val);
+        md.cache.insert(key, (val,0));
     }
     pub fn put_exp(&mut self, key: K, val: V, expiration: i32)
         where K: Eq + Hash + Clone,
@@ -56,7 +56,7 @@ impl<K: std::marker::Send  + 'static + Clone +  Eq + Hash, V: std::marker::Send 
         if !md.cache.contains_key(&key) {
             md.current_size = md.current_size + 1;
         }
-        md.cache.insert(key.clone(), val);
+        md.cache.insert(key.clone(), (val, expiration));
         let now = std::time::SystemTime::now();
         let milliseconds_from_now  = now.duration_since(std::time::UNIX_EPOCH).unwrap().as_millis() as i32 + expiration;
         md.expiration_set.entry(milliseconds_from_now)
@@ -70,7 +70,20 @@ impl<K: std::marker::Send  + 'static + Clone +  Eq + Hash, V: std::marker::Send 
         where K: Eq + Hash, V: Clone
     {
         let md = self.implementation.lock().unwrap();
-        md.cache.get(&key).map(|s| s.clone())
+        let ret = md.cache.get(&key).map(|s| s.clone());
+        if ret.is_some() {
+            let (val, expiration) = ret.unwrap();
+            if expiration > 0 {
+                let now = std::time::SystemTime::now();
+                let milliseconds_now  = now.duration_since(std::time::UNIX_EPOCH).unwrap().as_millis() as i32;
+                if milliseconds_now < expiration {
+                    return None;
+                }
+            }
+            return Some(val);
+        } else {
+            return None;
+        }
     }
     pub fn rm(&mut self, key: K)
         where K: Eq + Hash,
