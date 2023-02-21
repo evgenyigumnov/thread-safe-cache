@@ -85,6 +85,13 @@ impl<K: std::marker::Send  + 'static + Clone +  Eq + Hash, V: std::marker::Send 
             return None;
         }
     }
+    pub fn exists(&mut self, key: K) -> bool
+        where K: Eq + Hash, V: Clone
+    {
+        let md = self.implementation.lock().unwrap();
+        let ret = md.cache.contains_key(&key);
+        ret;
+    }
     pub fn rm(&mut self, key: K)
         where K: Eq + Hash,
     {
