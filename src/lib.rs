@@ -90,7 +90,7 @@ impl<K: std::marker::Send  + 'static + Clone +  Eq + Hash, V: std::marker::Send 
     {
         let md = self.implementation.lock().unwrap();
         let ret = md.cache.contains_key(&key);
-        ret;
+        ret
     }
     pub fn rm(&mut self, key: K)
         where K: Eq + Hash,
