@@ -16,13 +16,29 @@ pub struct ThreadSafeCache<K, V> {
 }
 
 
+pub struct Builder<K, V> {
+    max_size: i32,
+    phantom_data: std::marker::PhantomData<(K, V)>,
+}
 
-impl<K: std::marker::Send  + 'static + Clone +  Eq + Hash, V: std::marker::Send  + Clone + 'static> ThreadSafeCache<K, V> {
-    pub fn new() -> ThreadSafeCache<K, V> {
+trait BuilderTrait<K, V> {
+    fn build(self) -> ThreadSafeCache<K, V>;
+    fn max_size(&mut self, max_size: i32) -> &mut Self;
+    fn init() -> Builder<K, V> {
+        Builder {
+            max_size: 1000,
+            phantom_data: Default::default(),
+        }
+    }
+}
+
+impl <K: std::marker::Send  + 'static + Clone +  Eq + Hash, V: std::marker::Send  + Clone + 'static> BuilderTrait<K, V> for Builder<K, V>  {
+    fn build(self) ->  ThreadSafeCache<K, V> {
+
         let im = Arc::new(Mutex::new(ThreadSafeCacheImpl {
             cache: HashMap::new(),
             expiration_set: BTreeMap::new(),
-            max_size: 100,
+            max_size: self.max_size,
             current_size: 0,
         }));
         let ret = ThreadSafeCache {
@@ -38,6 +54,23 @@ impl<K: std::marker::Send  + 'static + Clone +  Eq + Hash, V: std::marker::Send 
             }
         });
         ret
+
+    }
+
+    fn max_size(&mut self, max_size: i32) -> &mut Self {
+        self.max_size = max_size;
+        self
+    }
+    
+}
+
+
+impl<K: std::marker::Send  + 'static + Clone +  Eq + Hash, V: std::marker::Send  + Clone + 'static> ThreadSafeCache<K, V> {
+    pub fn new() -> ThreadSafeCache<K, V> {
+        let mut builder: Builder<K,V> =Builder::init();
+        builder.max_size(1000);
+        let cache_build = builder.build();
+        cache_build
     }
 
     pub fn put(&mut self, key: K, val: V)
@@ -56,9 +89,9 @@ impl<K: std::marker::Send  + 'static + Clone +  Eq + Hash, V: std::marker::Send 
         if !md.cache.contains_key(&key) {
             md.current_size = md.current_size + 1;
         }
-        md.cache.insert(key.clone(), (val, expiration));
         let now = std::time::SystemTime::now();
         let milliseconds_from_now  = now.duration_since(std::time::UNIX_EPOCH).unwrap().as_millis() as i32 + expiration;
+        md.cache.insert(key.clone(), (val, milliseconds_from_now));
         md.expiration_set.entry(milliseconds_from_now)
             .and_modify(|curr| curr.push(key.clone())).or_insert({
             let mut ret = Vec::new();
@@ -158,13 +191,17 @@ mod tests {
 
             let mut cache1 = cache_init.clone();
             thread::spawn(move || {
+                println!("thread 1");
                 cache1.put("a", 1);
                 cache1.put_exp("b", 2, 1000);
+                println!("thread 1.");
             });
             let mut cache2 = cache_init.clone();
             let t = thread::spawn(move || {
+                println!("thread 2");
                 sleep(Duration::from_millis(100));
                 let ret = cache2.get("a");
+                println!("thread 2.");
                 ret
             });
             assert_eq!(t.join().unwrap(), Some(1));
@@ -178,6 +215,10 @@ mod tests {
         }
 
         thread::sleep(Duration::from_millis(1000));
+
+        let mut builder: Builder<String,String> = Builder::init();
+        builder.max_size(1000);
+        let cache_build = builder.build();
 
     }
 }

@@ -27,3 +27,14 @@ fn main() {
 
 ```
 
+
+```
+use thread_safe_cache::*;
+fn main() {
+        let mut builder: Builder<String,String> = Builder::init();
+        builder.max_size(1000); // not implemented
+        let cache_build = builder.build();
+}
+
+```
+
