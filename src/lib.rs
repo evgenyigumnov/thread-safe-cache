@@ -1,20 +1,59 @@
 mod tests;
 mod async_tests;
 mod embedded;
+mod network;
 use std::collections::{BTreeMap, HashMap};
 use std::hash::Hash;
 use std::sync::{Arc, Mutex};
 use std::thread;
 use std::time::Duration;
+use tokio::net::TcpStream;
 use crate::embedded::{ThreadSafeCache, ThreadSafeCacheImpl};
+use crate::network::NetworkCache;
 
+
+pub struct BuilderNetwork<K, V> {
+    address: String,
+    rt: tokio::runtime::Runtime,
+    phantom_data: std::marker::PhantomData<(K, V)>,
+}
+
+
+impl <K: std::marker::Send  + 'static + Clone +  Eq + Hash + serde::Serialize + serde::de::DeserializeOwned,
+    V: std::marker::Send  + Clone + serde::de::DeserializeOwned + serde::Serialize +  'static>  BuilderNetwork<K, V>  {
+    pub fn init() -> BuilderNetwork<K, V> {
+        let rt = tokio::runtime::Runtime::new().unwrap();
+        BuilderNetwork {
+            address: "".to_string(),
+            rt: rt,
+            phantom_data: Default::default(),
+        }
+    }
+
+    pub fn address(&mut self, address: String) -> &mut Self {
+        self.address = address;
+        self
+    }
+     pub fn connect(self) -> NetworkCache<K, V> {
+         //         TcpStream::connect(self.address.as_str()).await.unwrap()
+         let  stream = self.rt.block_on(async {
+             let stream = TcpStream::connect(self.address.as_str()).await.unwrap();
+             stream
+         });
+        let ret = NetworkCache {
+            tcp_stream:  stream,
+            rt: self.rt,
+            phantom_data: Default::default(),
+        };
+        ret
+    }
+
+}
 
 pub struct BuilderEmbedded<K, V> {
     max_size: i32,
     phantom_data: std::marker::PhantomData<(K, V)>,
 }
-
-
 
 impl <K: std::marker::Send  + 'static + Clone +  Eq + Hash + serde::Serialize + serde::de::DeserializeOwned,
     V: std::marker::Send  + Clone + serde::de::DeserializeOwned + serde::Serialize +  'static>  BuilderEmbedded<K, V>  {

@@ -70,3 +70,14 @@ fn save_test() {
 
 
 }
+
+#[test]
+fn network_test() {
+    let mut builder: BuilderNetwork<String, i32> = BuilderNetwork::init();
+    builder.address("127.0.0.1:8080".to_string());
+    let mut cache =builder.connect();
+    cache.put("a".to_string(), 1);
+
+
+
+}
