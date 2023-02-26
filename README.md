@@ -25,7 +25,9 @@ use std::thread;
 use std::thread::sleep;
 use std::time::Duration;
 fn main() {
-    let cache_init: ThreadSafeCache<String, i32> = ThreadSafeCache::new();
+    let mut builder: BuilderEmbedded<String, i32> = BuilderEmbedded::init();
+    builder.max_size(1000);
+    let mut cache_init = builder.build();
     let mut cache1 = cache_init.clone();
     thread::spawn(move || {
         cache1.put("key1".to_string(), 1);
@@ -50,8 +52,7 @@ fn main() {
 ```
 use thread_safe_cache::*;
 fn main() {
-    let mut builder: Builder<String, i32> = Builder::init();
-    builder.max_size(1000);
+    let mut builder: BuilderEmbedded<String, i32> = BuilderEmbedded::init();
     let mut cache = builder.build();
     cache.put("a".to_string(), 1);
     cache.save("test.db");

@@ -8,7 +8,7 @@ use std::time::Duration;
 use crate::embedded::{ThreadSafeCache, ThreadSafeCacheImpl};
 
 
-pub struct Builder<K, V> {
+pub struct BuilderEmbedded<K, V> {
     max_size: i32,
     phantom_data: std::marker::PhantomData<(K, V)>,
 }
@@ -16,9 +16,9 @@ pub struct Builder<K, V> {
 
 
 impl <K: std::marker::Send  + 'static + Clone +  Eq + Hash + serde::Serialize + serde::de::DeserializeOwned,
-    V: std::marker::Send  + Clone + serde::de::DeserializeOwned + serde::Serialize +  'static>  Builder<K, V>  {
-    fn init() -> Builder<K, V> {
-        Builder {
+    V: std::marker::Send  + Clone + serde::de::DeserializeOwned + serde::Serialize +  'static>  BuilderEmbedded<K, V>  {
+    fn init() -> BuilderEmbedded<K, V> {
+        BuilderEmbedded {
             max_size: 1000,
             phantom_data: Default::default(),
         }

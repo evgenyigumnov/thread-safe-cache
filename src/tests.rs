@@ -6,7 +6,7 @@ use super::*;
 #[test]
 fn common() {
     {
-        let mut builder: Builder<String, i32> = Builder::init();
+        let mut builder: BuilderEmbedded<String, i32> = BuilderEmbedded::init();
         builder.max_size(100);
         let cache_init = builder.build();
 
@@ -39,7 +39,7 @@ fn common() {
 
 #[test]
 fn builder_max_size() {
-    let mut builder: Builder<String, i32> = Builder::init();
+    let mut builder: BuilderEmbedded<String, i32> = BuilderEmbedded::init();
     builder.max_size(2);
     let mut cache = builder.build();
     cache.put("a".to_string(), 1);
@@ -58,13 +58,13 @@ fn builder_max_size() {
 
 #[test]
 fn save_test() {
-    let mut builder: Builder<String, i32> = Builder::init();
+    let mut builder: BuilderEmbedded<String, i32> = BuilderEmbedded::init();
     builder.max_size(1000);
     let mut cache = builder.build();
     cache.put("a".to_string(), 1);
     cache.save("test.db");
 
-    let mut builder: Builder<String, i32> = Builder::init();
+    let mut builder: BuilderEmbedded<String, i32> = BuilderEmbedded::init();
     builder.max_size(1000);
     let mut cache_clean = builder.build();
     cache_clean.load("test.db");
