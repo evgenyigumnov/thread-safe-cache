@@ -27,8 +27,8 @@ async fn main() -> Result<(), Box<dyn std::error::Error>> {
                         if op == CacheOp::Put as u8 {
                             let put_params:PutOpParams<String, i32> = bincode::deserialize(&buf[1..n]).unwrap();
                             cache.put(put_params.key, put_params.val);
-                            // println!("put");
                             socket.write_all(b"ok").await;
+                            // println!("put");
 
                         }
                         if op == CacheOp::Get as u8 {

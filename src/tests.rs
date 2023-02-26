@@ -82,4 +82,6 @@ fn network_test() {
     cache.put("d".to_string(), 1);
     let res = cache.get("a".to_string());
     assert_eq!(res, Some(1));
+    // let res = cache.get("e".to_string());
+    // assert_eq!(res, None);
 }

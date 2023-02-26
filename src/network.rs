@@ -17,6 +17,7 @@ impl <K: std::marker::Send  + 'static + Clone +  Eq + Hash + serde::Serialize + 
     fn put(&mut self, key: K, val: V)
         where K: Eq + Hash,
     {
+        // println!("put");
        self.rt.block_on(async {
             self.tcp_stream.writable().await.unwrap();
             let params = PutOpParams {
@@ -26,7 +27,7 @@ impl <K: std::marker::Send  + 'static + Clone +  Eq + Hash + serde::Serialize + 
            let mut encoded: Vec<u8> = bincode::serialize(&params).unwrap();
            let mut op_code:Vec<u8> = vec![CacheOp::Put as u8];
            op_code.append(&mut encoded);
-           self.tcp_stream.write_all(op_code.as_slice());
+           let ret = self.tcp_stream.write_all(op_code.as_slice()).await;
            self.tcp_stream.readable().await.unwrap();
            let mut buf = Vec::with_capacity(4096);
            loop {
