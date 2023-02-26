@@ -1,18 +1,21 @@
+mod tests;
 use std::collections::{BTreeMap, HashMap};
-use std::collections::btree_map::OccupiedEntry;
+use std::fs::File;
 use std::hash::Hash;
+use std::io::Write;
+use std::io::Read;
 use std::sync::{Arc, Mutex};
 use std::thread;
 use std::time::Duration;
-mod tests;
-struct ThreadSafeCacheImpl<K, V> {
+
+struct ThreadSafeCacheImpl<K: Eq + Hash, V > {
     cache: HashMap<K, (V, u128)>,
     expiration_set: BTreeMap<u128,Vec<K>>,
     max_size: i32,
     current_size: i32,
 }
 
-pub struct ThreadSafeCache<K, V> {
+pub struct ThreadSafeCache<K: Eq + Hash + serde::de::DeserializeOwned, V: serde::de::DeserializeOwned> {
     implementation: Arc<Mutex<ThreadSafeCacheImpl<K, V>>>,
 }
 
@@ -22,7 +25,7 @@ pub struct Builder<K, V> {
     phantom_data: std::marker::PhantomData<(K, V)>,
 }
 
-trait BuilderTrait<K, V> {
+trait BuilderTrait<K: Eq + Hash + serde::de::DeserializeOwned, V: serde::de::DeserializeOwned> {
     fn build(self) -> ThreadSafeCache<K, V>;
     fn max_size(&mut self, max_size: i32) -> &mut Self;
     fn init() -> Builder<K, V> {
@@ -33,7 +36,7 @@ trait BuilderTrait<K, V> {
     }
 }
 
-impl <K: std::marker::Send  + 'static + Clone +  Eq + Hash, V: std::marker::Send  + Clone + 'static> BuilderTrait<K, V> for Builder<K, V>  {
+impl <K: std::marker::Send  + 'static + Clone +  Eq + Hash + serde::Serialize + serde::de::DeserializeOwned, V: std::marker::Send  + Clone + serde::de::DeserializeOwned + serde::Serialize +  'static> BuilderTrait<K, V> for Builder<K, V>  {
     fn build(self) ->  ThreadSafeCache<K, V> {
 
         let im = Arc::new(Mutex::new(ThreadSafeCacheImpl {
@@ -66,7 +69,7 @@ impl <K: std::marker::Send  + 'static + Clone +  Eq + Hash, V: std::marker::Send
 }
 
 
-impl<K: std::marker::Send  + 'static + Clone +  Eq + Hash, V: std::marker::Send  + Clone + 'static> ThreadSafeCache<K, V> {
+impl<K: std::marker::Send  + 'static + Clone +  Eq + Hash + serde::Serialize + serde::de::DeserializeOwned, V: std::marker::Send  + Clone + serde::Serialize + serde::de::DeserializeOwned +'static> ThreadSafeCache<K, V> {
     pub fn new() -> ThreadSafeCache<K, V> {
         let mut builder: Builder<K,V> =Builder::init();
         builder.max_size(1000);
@@ -188,9 +191,43 @@ impl<K: std::marker::Send  + 'static + Clone +  Eq + Hash, V: std::marker::Send 
         }
     }
 
+
+    pub fn save(&mut self, file_name: &str) {
+        let md = self.implementation.lock().unwrap();
+        let mut copy: ThreadSafeCacheImpl<K, V> = ThreadSafeCacheImpl {
+            cache: HashMap::new(),
+            expiration_set: BTreeMap::new(),
+            max_size: 0,
+            current_size: 0,
+        };
+        md.cache.iter().for_each(|(k, v)| {
+            copy.cache.insert(k.clone(), v.clone());
+        });
+        let encoded: Vec<u8> = bincode::serialize(&copy.cache).unwrap();
+        let mut file = File::create(file_name).unwrap();
+        file.write_all(&encoded).unwrap();
+
+    }
+
+    pub fn load(&mut self, file_name: &str) {
+        let mut file = File::open(file_name).unwrap();
+        let mut encoded: Vec<u8> = Vec::new();
+        file.read_to_end(&mut encoded).unwrap();
+        let mut copy: ThreadSafeCacheImpl<K, V> =ThreadSafeCacheImpl {
+            cache: HashMap::new(),
+            expiration_set: BTreeMap::new(),
+            max_size: 0,
+            current_size: 0
+        };
+        copy.cache = bincode::deserialize(&encoded[..]).unwrap();
+        let mut md = self.implementation.lock().unwrap();
+        md.cache = copy.cache;
+        md.current_size = md.cache.len() as i32;
+    }
+
 }
 
-impl<K, V> Clone for ThreadSafeCache<K, V> {
+impl<K: Eq + Hash + serde::de::DeserializeOwned + serde::Serialize, V: serde::de::DeserializeOwned + serde::Serialize> Clone for ThreadSafeCache<K, V> {
     fn clone(&self) -> ThreadSafeCache<K, V> {
         ThreadSafeCache {
             implementation: Arc::clone(&self.implementation),
