@@ -18,10 +18,6 @@
 
 ## Usage
 
-- Client/Server mode
-- LRU
-- Tags
-
 
 ```
 use thread_safe_cache::*;
@@ -50,16 +46,6 @@ fn main() {
 
 ```
 
-
-```
-use thread_safe_cache::*;
-fn main() {
-        let mut builder: Builder<String,String> = Builder::init();
-        builder.max_size(1000);
-        let cache_build = builder.build();
-}
-
-```
 
 ```
 use thread_safe_cache::*;
