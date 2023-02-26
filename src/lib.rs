@@ -193,35 +193,24 @@ impl<K: std::marker::Send  + 'static + Clone +  Eq + Hash + serde::Serialize + s
 
 
     pub fn save(&mut self, file_name: &str) {
-        let md = self.implementation.lock().unwrap();
-        let mut copy: ThreadSafeCacheImpl<K, V> = ThreadSafeCacheImpl {
-            cache: HashMap::new(),
-            expiration_set: BTreeMap::new(),
-            max_size: 0,
-            current_size: 0,
+        let cloned = {
+            let md = self.implementation.lock().unwrap();
+            md.cache.clone()
         };
-        md.cache.iter().for_each(|(k, v)| {
-            copy.cache.insert(k.clone(), v.clone());
-        });
-        let encoded: Vec<u8> = bincode::serialize(&copy.cache).unwrap();
+        let encoded: Vec<u8> = bincode::serialize(&cloned).unwrap();
         let mut file = File::create(file_name).unwrap();
         file.write_all(&encoded).unwrap();
 
     }
 
     pub fn load(&mut self, file_name: &str) {
+        let buf: HashMap<K, (V, u128)>;
         let mut file = File::open(file_name).unwrap();
         let mut encoded: Vec<u8> = Vec::new();
         file.read_to_end(&mut encoded).unwrap();
-        let mut copy: ThreadSafeCacheImpl<K, V> =ThreadSafeCacheImpl {
-            cache: HashMap::new(),
-            expiration_set: BTreeMap::new(),
-            max_size: 0,
-            current_size: 0
-        };
-        copy.cache = bincode::deserialize(&encoded[..]).unwrap();
+        buf = bincode::deserialize(&encoded[..]).unwrap();
         let mut md = self.implementation.lock().unwrap();
-        md.cache = copy.cache;
+        md.cache = buf;
         md.current_size = md.cache.len() as i32;
     }
 
