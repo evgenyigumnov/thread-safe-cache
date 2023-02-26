@@ -13,19 +13,17 @@ pub struct Builder<K, V> {
     phantom_data: std::marker::PhantomData<(K, V)>,
 }
 
-trait BuilderTrait<K: Eq + Hash + serde::de::DeserializeOwned, V: serde::de::DeserializeOwned> {
-    fn build(self) -> ThreadSafeCache<K, V>;
-    fn max_size(&mut self, max_size: i32) -> &mut Self;
+
+
+impl <K: std::marker::Send  + 'static + Clone +  Eq + Hash + serde::Serialize + serde::de::DeserializeOwned,
+    V: std::marker::Send  + Clone + serde::de::DeserializeOwned + serde::Serialize +  'static>  Builder<K, V>  {
     fn init() -> Builder<K, V> {
         Builder {
             max_size: 1000,
             phantom_data: Default::default(),
         }
     }
-}
 
-impl <K: std::marker::Send  + 'static + Clone +  Eq + Hash + serde::Serialize + serde::de::DeserializeOwned,
-    V: std::marker::Send  + Clone + serde::de::DeserializeOwned + serde::Serialize +  'static> BuilderTrait<K, V> for Builder<K, V>  {
     fn build(self) -> ThreadSafeCache<K, V> {
 
         let im = Arc::new(Mutex::new(ThreadSafeCacheImpl {
@@ -58,8 +56,8 @@ impl <K: std::marker::Send  + 'static + Clone +  Eq + Hash + serde::Serialize + 
 }
 
 
-trait  ThreadSafeCacheTrait<K: std::marker::Send  + 'static + Clone +  Eq + Hash + serde::Serialize + serde::de::DeserializeOwned,
-    V: std::marker::Send  + Clone + serde::Serialize + serde::de::DeserializeOwned +'static> {
+trait  ThreadSafeCacheTrait<K: 'static + Clone +  Eq + Hash + serde::Serialize + serde::de::DeserializeOwned,
+    V:   Clone + serde::Serialize + serde::de::DeserializeOwned +'static> {
     fn put(&mut self, key: K, val: V)
         where K: Eq + Hash;
     fn put_exp(&mut self, key: K, val: V, expiration: i32)
@@ -69,8 +67,8 @@ trait  ThreadSafeCacheTrait<K: std::marker::Send  + 'static + Clone +  Eq + Hash
     fn exists(&mut self, key: K) -> bool;
     fn rm(&mut self, key: K);
 }
-trait ThreadSafeCachePersistTrait<K: std::marker::Send +  'static + Clone +  Eq + Hash + serde::Serialize + serde::de::DeserializeOwned,
-    V: std::marker::Send  + Clone + serde::Serialize + serde::de::DeserializeOwned +'static>: ThreadSafeCacheTrait<K,V>  {
+trait ThreadSafeCachePersistTrait<K:   'static + Clone +  Eq + Hash + serde::Serialize + serde::de::DeserializeOwned,
+    V:  Clone + serde::Serialize + serde::de::DeserializeOwned +'static>: ThreadSafeCacheTrait<K,V>  {
     fn save(&mut self, file_name: &str);
     fn load(&mut self, file_name: &str);
 }
