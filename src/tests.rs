@@ -6,7 +6,9 @@ use super::*;
 #[test]
 fn common() {
     {
-        let cache_init: ThreadSafeCache<String, i32> = ThreadSafeCache::new();
+        let mut builder: Builder<String, i32> = Builder::init();
+        builder.max_size(100);
+        let cache_init = builder.build();
 
         let mut cache1 = cache_init.clone();
         thread::spawn(move || {
