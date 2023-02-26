@@ -168,19 +168,19 @@ impl<K: std::marker::Send  + 'static + Clone +  Eq + Hash + serde::Serialize + s
         let now = std::time::SystemTime::now();
         let milliseconds_now  = now.duration_since(std::time::UNIX_EPOCH).unwrap().as_millis() as u128;
         let new_expiration_set = md.expiration_set.split_off(&milliseconds_now);
-        let old_clone = md.expiration_set.clone();
-        // println!("old_clone: {}", old_clone.len());
-
-        for (_, keys) in old_clone.iter() {
-            // println!("keys len: {}", keys.len());
-            for key in keys {
-                let r = md.cache.remove(&key);
-                if r.is_some() {
-                    md.current_size = md.current_size - 1;
-                }
+        let keys: Vec<K> = md.expiration_set.iter().map(|(_, keys)| {
+            keys.clone()
+        }).flatten().collect();
+        // println!("Keys len : {}", keys.len());
+        for key in keys {
+            let r = md.cache.remove(&key);
+            if r.is_some() {
+                md.current_size = md.current_size - 1;
             }
         }
+
         md.expiration_set = new_expiration_set;
+        // println!("expiration_set len : {}", md.expiration_set.len());
 
 
         let count = Arc::strong_count(&self.implementation);

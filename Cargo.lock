@@ -59,7 +59,7 @@ dependencies = [
 
 [[package]]
 name = "thread-safe-cache"
-version = "0.3.0"
+version = "0.3.2"
 dependencies = [
  "bincode",
  "serde",
