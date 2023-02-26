@@ -1,4 +1,5 @@
 mod tests;
+mod async_tests;
 mod embedded;
 use std::collections::{BTreeMap, HashMap};
 use std::hash::Hash;

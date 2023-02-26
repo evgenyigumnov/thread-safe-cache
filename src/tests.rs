@@ -1,5 +1,3 @@
-use std::thread;
-use std::thread::sleep;
 use std::time::Duration;
 use super::*;
 
@@ -20,7 +18,7 @@ fn common() {
         let mut cache2 = cache_init.clone();
         let t = thread::spawn(move || {
             // println!("thread 2");
-            sleep(Duration::from_millis(100));
+            thread::sleep(Duration::from_millis(100));
             let ret = cache2.get("a".to_string());
             // println!("thread 2.");
             ret
