@@ -20,7 +20,6 @@ async fn main() -> Result<(), Box<dyn std::error::Error>> {
                     Ok(n) => {
                         println!(".{}",n);
                         socket.write_all(b"ok").await;
-                        socket.write_all(b"ok").await;
                         n
                     },
                     Err(e) => {
