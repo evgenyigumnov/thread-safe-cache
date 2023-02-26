@@ -1,5 +1,28 @@
 # thread-safe-cache
 
+## Features
+
+- Thread safe
+- Key/Value cache
+- Expiration
+- Save/Load to file
+- Embedded mode
+- Max size
+
+## Todo
+
+- Client/Server mode
+- LRU
+- Tags
+
+
+## Usage
+
+- Client/Server mode
+- LRU
+- Tags
+
+
 ```
 use thread_safe_cache::*;
 use std::thread;
