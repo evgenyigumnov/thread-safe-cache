@@ -2,7 +2,7 @@ use std::hash::Hash;
 use tokio::net::TcpStream;
 use crate::{ThreadSafeCacheTrait};
 use serde_derive::{Serialize,Deserialize};
-
+use std::io;
 pub struct NetworkCache<K: Eq + Hash + serde::de::DeserializeOwned, V: serde::de::DeserializeOwned> {
     pub tcp_stream: TcpStream,
     pub rt: tokio::runtime::Runtime,
@@ -56,7 +56,46 @@ impl <K: std::marker::Send  + 'static + Clone +  Eq + Hash + serde::Serialize + 
     fn get(&mut self, key: K) -> Option<V>
         where K: Eq + Hash, V: Clone
     {
-        None
+
+        let ret = self.rt.block_on(async {
+            self.tcp_stream.writable().await.unwrap();
+            let params = GetOpParams {
+                key: key,
+            };
+            let mut encoded: Vec<u8> = bincode::serialize(&params).unwrap();
+            let mut op_code:Vec<u8> = vec![CacheOp::Get as u8];
+            op_code.append(&mut encoded);
+            match self.tcp_stream.try_write(op_code.as_slice()) {
+                Ok(n) => {
+                    self.tcp_stream.readable().await.unwrap();
+                    let mut buf = Vec::with_capacity(4096);
+                    let mut ret:Option<V>;
+                    loop {
+                        match self.tcp_stream.try_read_buf(&mut buf) {
+                            Ok(0) => {
+                                panic!("closed");
+                            },
+                            Ok(n) => {
+                                let ret_get: GetRet<V> = bincode::deserialize(&buf[0..n]).unwrap();
+                                ret = ret_get.val;
+                                break;
+                            }
+                            Err(ref e) if e.kind() == io::ErrorKind::WouldBlock => {
+                                continue;
+                            }
+                            Err(e) => {
+                                panic!("{}",e);
+                            }
+                        }
+                    }
+                    ret
+                }
+                Err(e) => {
+                    panic!("{}",e);
+                }
+            }
+        });
+        ret
     }
     fn exists(&mut self, key: K) -> bool
         where K: Eq + Hash, V: Clone
@@ -79,7 +118,15 @@ pub enum CacheOp {
 }
 
 #[derive(Serialize, Deserialize)]
-struct PutOpParams<K,V> {
-    key: K,
-    val: V
+pub struct PutOpParams<K,V> {
+    pub key: K,
+    pub val: V
+}
+#[derive(Serialize, Deserialize)]
+pub struct GetOpParams<K> {
+    pub key: K
+}
+#[derive(Serialize, Deserialize)]
+pub struct GetRet<V> {
+    pub val: Option<V>,
 }

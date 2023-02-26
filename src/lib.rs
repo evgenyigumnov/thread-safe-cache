@@ -1,6 +1,6 @@
 mod tests;
 mod embedded;
-mod network;
+pub mod network;
 use std::collections::{BTreeMap, HashMap};
 use std::hash::Hash;
 use std::sync::{Arc, Mutex};
