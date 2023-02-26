@@ -77,9 +77,9 @@ fn network_test() {
     builder.address("127.0.0.1:8080".to_string());
     let mut cache =builder.connect();
     cache.put("a".to_string(), 1);
+    cache.put("b".to_string(), 1);
+    cache.put("c".to_string(), 1);
+    cache.put("d".to_string(), 1);
     let res = cache.get("a".to_string());
     assert_eq!(res, Some(1));
-
-
-
 }

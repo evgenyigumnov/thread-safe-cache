@@ -10,8 +10,6 @@ pub struct NetworkCache<K: Eq + Hash + serde::de::DeserializeOwned, V: serde::de
 
 }
 
-
-
 impl <K: std::marker::Send  + 'static + Clone +  Eq + Hash + serde::Serialize + serde::de::DeserializeOwned,
     V: std::marker::Send  + Clone + serde::Serialize + serde::de::DeserializeOwned +'static> ThreadSafeCacheTrait<K, V> for NetworkCache<K, V> {
     fn put(&mut self, key: K, val: V)
@@ -30,15 +28,21 @@ impl <K: std::marker::Send  + 'static + Clone +  Eq + Hash + serde::Serialize + 
                 Ok(n) => {
                     self.tcp_stream.readable().await.unwrap();
                     let mut buf = Vec::with_capacity(4096);
-                    match self.tcp_stream.try_read_buf(&mut buf) {
-                        Ok(0) => {
-                            panic!("closed");
-                        },
-                        Ok(n) => {
-                            println!(".{}",n);
-                        }
-                        Err(e) => {
-                            panic!("{}",e);
+                    loop {
+                        match self.tcp_stream.try_read_buf(&mut buf) {
+                            Ok(0) => {
+                                panic!("closed");
+                            },
+                            Ok(n) => {
+                                // println!(".{}",n);
+                                break;
+                            }
+                            Err(ref e) if e.kind() == io::ErrorKind::WouldBlock => {
+                                continue;
+                            }
+                            Err(e) => {
+                                panic!("{}",e);
+                            }
                         }
                     }
                 }
