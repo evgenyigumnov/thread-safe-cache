@@ -17,14 +17,14 @@ pub struct BuilderEmbedded<K, V> {
 
 impl <K: std::marker::Send  + 'static + Clone +  Eq + Hash + serde::Serialize + serde::de::DeserializeOwned,
     V: std::marker::Send  + Clone + serde::de::DeserializeOwned + serde::Serialize +  'static>  BuilderEmbedded<K, V>  {
-    fn init() -> BuilderEmbedded<K, V> {
+    pub fn init() -> BuilderEmbedded<K, V> {
         BuilderEmbedded {
             max_size: 1000,
             phantom_data: Default::default(),
         }
     }
 
-    fn build(self) -> ThreadSafeCache<K, V> {
+    pub fn build(self) -> ThreadSafeCache<K, V> {
 
         let im = Arc::new(Mutex::new(ThreadSafeCacheImpl {
             cache: HashMap::new(),
@@ -48,7 +48,7 @@ impl <K: std::marker::Send  + 'static + Clone +  Eq + Hash + serde::Serialize + 
 
     }
 
-    fn max_size(&mut self, max_size: i32) -> &mut Self {
+    pub fn max_size(&mut self, max_size: i32) -> &mut Self {
         self.max_size = max_size;
         self
     }
@@ -56,7 +56,7 @@ impl <K: std::marker::Send  + 'static + Clone +  Eq + Hash + serde::Serialize + 
 }
 
 
-trait  ThreadSafeCacheTrait<K: 'static + Clone +  Eq + Hash + serde::Serialize + serde::de::DeserializeOwned,
+pub trait  ThreadSafeCacheTrait<K: 'static + Clone +  Eq + Hash + serde::Serialize + serde::de::DeserializeOwned,
     V:   Clone + serde::Serialize + serde::de::DeserializeOwned +'static> {
     fn put(&mut self, key: K, val: V)
         where K: Eq + Hash;
@@ -67,7 +67,7 @@ trait  ThreadSafeCacheTrait<K: 'static + Clone +  Eq + Hash + serde::Serialize +
     fn exists(&mut self, key: K) -> bool;
     fn rm(&mut self, key: K);
 }
-trait ThreadSafeCachePersistTrait<K:   'static + Clone +  Eq + Hash + serde::Serialize + serde::de::DeserializeOwned,
+pub trait ThreadSafeCachePersistTrait<K:   'static + Clone +  Eq + Hash + serde::Serialize + serde::de::DeserializeOwned,
     V:  Clone + serde::Serialize + serde::de::DeserializeOwned +'static>: ThreadSafeCacheTrait<K,V>  {
     fn save(&mut self, file_name: &str);
     fn load(&mut self, file_name: &str);
