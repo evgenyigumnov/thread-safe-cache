@@ -1,5 +1,5 @@
 mod tests;
-pub mod embedded;
+mod embedded;
 use std::collections::{BTreeMap, HashMap};
 use std::hash::Hash;
 use std::sync::{Arc, Mutex};

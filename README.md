@@ -57,7 +57,7 @@ fn main() {
     cache.put("a".to_string(), 1);
     cache.save("test.db");
 
-    let mut builder: Builder<String, i32> = Builder::init();
+    let mut builder: BuilderEmbedded<String, i32> = BuilderEmbedded::init();
     builder.max_size(1000);
     let mut cache_clean = builder.build();
     cache_clean.load("test.db");
