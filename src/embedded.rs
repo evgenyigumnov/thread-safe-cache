@@ -61,8 +61,9 @@ impl <K: std::marker::Send  + 'static + Clone +  Eq + Hash + serde::Serialize + 
                 }
             }
         }
-        md.current_size = md.current_size + 1;
-
+        if !md.cache.contains_key(&key) {
+            md.current_size = md.current_size + 1;
+        }
 
         let now = std::time::SystemTime::now();
         let year:u128 = 1000 * 60 * 60 * 24 * 365;
@@ -80,6 +81,16 @@ impl <K: std::marker::Send  + 'static + Clone +  Eq + Hash + serde::Serialize + 
         where K: Eq + Hash + Clone,
     {
         let mut md = self.implementation.lock().unwrap();
+        if md.current_size == md.max_size {
+            let last_opt = md.expiration_set.pop_first();
+            if let Some((_, last)) = last_opt {
+                for key in last {
+                    md.cache.remove(&key);
+                    md.current_size = md.current_size - 1;
+                }
+            }
+        }
+
         if !md.cache.contains_key(&key) {
             md.current_size = md.current_size + 1;
         }

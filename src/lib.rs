@@ -77,9 +77,9 @@ impl <K: std::marker::Send  + 'static + Clone +  Eq + Hash + serde::Serialize + 
         let mut ret_clone = ret.clone();
         thread::spawn(move || {
             loop {
-                if !ret_clone.clean() {
-                    break;
-                }
+                // if !ret_clone.clean() {
+                //     break;
+                // }
                 thread::sleep(Duration::from_millis(1000));
             }
         });
