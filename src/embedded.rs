@@ -169,12 +169,12 @@ impl <K: std::marker::Send  + 'static + Clone +  Eq + Hash + serde::Serialize + 
         md.expiration_set = new_expiration_set;
         // println!("expiration_set len : {}", md.expiration_set.len());
 
-        // let count = Arc::strong_count(&self.implementation);
-        // if count == 0 {
-        //     false
-        // } else {
-        //     true
-        // }
+        let count = Arc::strong_count(&self.implementation);
+        if count == 0 {
+            false
+        } else {
+            true
+        }
         true
     }
 
