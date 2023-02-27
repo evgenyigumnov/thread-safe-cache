@@ -160,7 +160,7 @@ impl <K: std::marker::Send  + 'static + Clone +  Eq + Hash + serde::Serialize + 
 
 
         let count = Arc::strong_count(&self.implementation);
-        if count == 1 {
+        if count == 0 {
             false
         } else {
             true
