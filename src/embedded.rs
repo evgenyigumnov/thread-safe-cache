@@ -175,7 +175,6 @@ impl <K: std::marker::Send  + 'static + Clone +  Eq + Hash + serde::Serialize + 
         } else {
             true
         }
-        true
     }
 
 
