@@ -1,5 +1,5 @@
 mod tests;
-mod embedded;
+pub mod embedded;
 pub mod network;
 use std::collections::{BTreeMap, HashMap};
 use std::hash::Hash;
