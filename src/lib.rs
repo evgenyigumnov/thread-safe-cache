@@ -63,7 +63,7 @@ impl <K: std::marker::Send  + 'static + Clone +  Eq + Hash + serde::Serialize + 
         }
     }
 
-    pub fn build(self) -> ThreadSafeCache<K, V> {
+    pub fn build(&self) -> ThreadSafeCache<K, V> {
 
         let im = Arc::new(Mutex::new(ThreadSafeCacheImpl {
             cache: HashMap::new(),
